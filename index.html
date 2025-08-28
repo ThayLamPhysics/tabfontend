@@ -564,48 +564,51 @@
                     answerOptions.appendChild(input);
                     break;
                 case 'mtf':
-                    question.statements.forEach((statement, index) => {
-                        const statementDiv = document.createElement('div');
-                        statementDiv.className = 'mtf-statement p-3 border-t border-cyan-500/20';
-                        
-                        const statementText = document.createElement('p');
-                        statementText.innerHTML = statement;
-                        statementText.className = 'mb-2';
-                        statementDiv.appendChild(statementText);
+                    const statements = question.statements || question.options;
+                    if (statements && Array.isArray(statements)) {
+                        statements.forEach((statement, index) => {
+                            const statementDiv = document.createElement('div');
+                            statementDiv.className = 'mtf-statement flex items-center justify-between p-3 border-t border-cyan-500/20';
+                            
+                            const statementText = document.createElement('p');
+                            statementText.innerHTML = statement;
+                            statementText.className = 'flex-grow mr-4';
+                            statementDiv.appendChild(statementText);
 
-                        const buttonGroup = document.createElement('div');
-                        buttonGroup.className = 'flex gap-2';
-                        
-                        const trueBtn = document.createElement('button');
-                        trueBtn.textContent = 'Đúng';
-                        trueBtn.className = 'flex-1 mtf-button p-2 rounded-md text-sm';
-                        trueBtn.dataset.value = 'true';
-                        
-                        const falseBtn = document.createElement('button');
-                        falseBtn.textContent = 'Sai';
-                        falseBtn.className = 'flex-1 mtf-button p-2 rounded-md text-sm';
-                        falseBtn.dataset.value = 'false';
+                            const buttonGroup = document.createElement('div');
+                            buttonGroup.className = 'flex gap-2 flex-shrink-0';
+                            
+                            const trueBtn = document.createElement('button');
+                            trueBtn.textContent = 'Đúng';
+                            trueBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
+                            trueBtn.dataset.value = 'true';
+                            
+                            const falseBtn = document.createElement('button');
+                            falseBtn.textContent = 'Sai';
+                            falseBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
+                            falseBtn.dataset.value = 'false';
 
-                        if (savedAnswer && savedAnswer.answer[index] === true) {
-                            trueBtn.classList.add('selected');
-                        } else if (savedAnswer && savedAnswer.answer[index] === false) {
-                            falseBtn.classList.add('selected');
-                        }
+                            if (savedAnswer && savedAnswer.answer[index] === true) {
+                                trueBtn.classList.add('selected');
+                            } else if (savedAnswer && savedAnswer.answer[index] === false) {
+                                falseBtn.classList.add('selected');
+                            }
 
-                        trueBtn.onclick = () => {
-                            trueBtn.classList.add('selected');
-                            falseBtn.classList.remove('selected');
-                        };
-                        falseBtn.onclick = () => {
-                            falseBtn.classList.add('selected');
-                            trueBtn.classList.remove('selected');
-                        };
+                            trueBtn.onclick = () => {
+                                trueBtn.classList.add('selected');
+                                falseBtn.classList.remove('selected');
+                            };
+                            falseBtn.onclick = () => {
+                                falseBtn.classList.add('selected');
+                                trueBtn.classList.remove('selected');
+                            };
 
-                        buttonGroup.appendChild(trueBtn);
-                        buttonGroup.appendChild(falseBtn);
-                        statementDiv.appendChild(buttonGroup);
-                        answerOptions.appendChild(statementDiv);
-                    });
+                            buttonGroup.appendChild(trueBtn);
+                            buttonGroup.appendChild(falseBtn);
+                            statementDiv.appendChild(buttonGroup);
+                            answerOptions.appendChild(statementDiv);
+                        });
+                    }
                     break;
             }
             
@@ -774,8 +777,9 @@
                     } else if (q.type === 'tf') {
                         studentAnswerText = studentAns ? 'Đúng' : 'Sai';
                     } else if (q.type === 'mtf') {
+                        const statements = q.statements || q.options;
                         studentAnswerText = '<ul class="list-disc list-inside text-left">';
-                        q.statements.forEach((stmt, i) => {
+                        statements.forEach((stmt, i) => {
                            const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
                            studentAnswerText += \`<li>\${stmt} -> <strong>\${studentChoice}</strong></li>\`;
                         });
@@ -800,8 +804,9 @@
                     } else if (q.type === 'tf') {
                         correctAnswerText = correctAns ? 'Đúng' : 'Sai';
                     } else if (q.type === 'mtf') {
+                        const statements = q.statements || q.options;
                         correctAnswerText = '<ul class="list-disc list-inside text-left">';
-                        q.statements.forEach((stmt, i) => {
+                        statements.forEach((stmt, i) => {
                            const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
                            correctAnswerText += \`<li>\${stmt} -> <strong>\${correctChoice}</strong></li>\`;
                         });
