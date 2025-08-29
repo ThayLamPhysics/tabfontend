@@ -470,7 +470,7 @@
 
         function renderQuestion() {
             const question = state.questions[state.currentQuestionIndex];
-            questionText.innerHTML = question.question;
+            
             questionCounter.textContent = \`Câu \${state.currentQuestionIndex + 1} / \${state.questions.length}\`;
             progressBar.style.width = \`\${((state.currentQuestionIndex + 1) / state.questions.length) * 100}%\`;
             
@@ -478,46 +478,82 @@
             const subjectName = state.subjectNames[subjectKey] || subjectKey.charAt(0).toUpperCase() + subjectKey.slice(1);
             subjectBadge.textContent = subjectName;
 
-            // Clear previous indicators and apply new ones
-            questionCard.classList.remove('hard-question', 'comprehension-question');
-            questionIcons.innerHTML = '';
-
-            // Apply cognitive level styling
-            if (question.cognitiveLevel === 'high-order-application' || question.cognitiveLevel === 'application' || question.difficulty === 'hard') {
-                questionCard.classList.add('hard-question');
-            } else if (question.cognitiveLevel === 'comprehension') {
-                questionCard.classList.add('comprehension-question');
-            }
-
-            // Apply icons
-            if (question.cognitiveLevel === 'high-order-application') {
-                const starIcon = document.createElement('span');
-                starIcon.innerHTML = '⭐';
-                starIcon.title = 'Câu hỏi vận dụng cao';
-                starIcon.className = 'text-2xl';
-                questionIcons.appendChild(starIcon);
-            }
-            if (question.requiresCalculation) {
-                const calcIcon = document.createElement('span');
-                calcIcon.innerHTML = '🖩';
-                calcIcon.title = 'Câu hỏi này cần tính toán';
-                calcIcon.className = 'text-2xl';
-                questionIcons.appendChild(calcIcon);
-            }
-
-            questionImageContainer.innerHTML = '';
-            if (question.imageUrl) {
-                const img = document.createElement('img');
-                img.src = question.imageUrl;
-                img.alt = 'Hình ảnh minh họa';
-                img.className = 'max-h-72 w-auto mx-auto my-4 rounded-lg shadow-lg';
-                questionImageContainer.appendChild(img);
-            }
-
+            applyQuestionStyles(question);
+            
             answerOptions.innerHTML = '';
-            const savedAnswer = state.answers[state.currentQuestionIndex];
 
             switch (question.type) {
+                case 'group':
+                    questionText.innerHTML = question.groupPrompt || 'Trả lời các mệnh đề sau:';
+                    questionImageContainer.innerHTML = ''; // Groups don't have a single image
+                    
+                    const savedGroupAnswer = state.answers[state.currentQuestionIndex]?.answer || [];
+
+                    question.subQuestions.forEach((subQ, index) => {
+                        const statementDiv = document.createElement('div');
+                        statementDiv.className = 'mtf-statement flex items-center justify-between p-3 border-t border-cyan-500/20';
+                        
+                        const statementText = document.createElement('p');
+                        statementText.innerHTML = subQ.question;
+                        statementText.className = 'flex-grow mr-4';
+                        statementDiv.appendChild(statementText);
+
+                        const buttonGroup = document.createElement('div');
+                        buttonGroup.className = 'flex gap-2 flex-shrink-0';
+                        
+                        const trueBtn = document.createElement('button');
+                        trueBtn.textContent = 'Đúng';
+                        trueBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
+                        trueBtn.dataset.value = 'true';
+                        
+                        const falseBtn = document.createElement('button');
+                        falseBtn.textContent = 'Sai';
+                        falseBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
+                        falseBtn.dataset.value = 'false';
+
+                        if (savedGroupAnswer[index] === true) {
+                            trueBtn.classList.add('selected');
+                        } else if (savedGroupAnswer[index] === false) {
+                            falseBtn.classList.add('selected');
+                        }
+
+                        trueBtn.onclick = () => {
+                            trueBtn.classList.add('selected');
+                            falseBtn.classList.remove('selected');
+                        };
+                        falseBtn.onclick = () => {
+                            falseBtn.classList.add('selected');
+                            trueBtn.classList.remove('selected');
+                        };
+
+                        buttonGroup.appendChild(trueBtn);
+                        buttonGroup.appendChild(falseBtn);
+                        statementDiv.appendChild(buttonGroup);
+                        answerOptions.appendChild(statementDiv);
+                    });
+                    break;
+                
+                default: // Handles mc, tf, fib
+                    questionText.innerHTML = question.question;
+                    questionImageContainer.innerHTML = '';
+                    if (question.imageUrl) {
+                        const img = document.createElement('img');
+                        img.src = question.imageUrl;
+                        img.alt = 'Hình ảnh minh họa';
+                        img.className = 'max-h-72 w-auto mx-auto my-4 rounded-lg shadow-lg';
+                        questionImageContainer.appendChild(img);
+                    }
+                    renderSingleAnswerOptions(question);
+                    break;
+            }
+            
+            updateNavButtons();
+            state.questionStartTime = Date.now();
+        }
+
+        function renderSingleAnswerOptions(question) {
+             const savedAnswer = state.answers[state.currentQuestionIndex];
+             switch (question.type) {
                 case 'mc':
                     question.options.forEach((option, index) => {
                         const button = document.createElement('button');
@@ -532,7 +568,7 @@
                     });
                     break;
                 case 'tf':
-                    const trueButton = document.createElement('button');
+                     const trueButton = document.createElement('button');
                     trueButton.className = 'w-full p-4 rounded-lg text-left option-button';
                     trueButton.textContent = 'Đúng';
                     trueButton.dataset.answer = 'true';
@@ -563,58 +599,35 @@
                     }
                     answerOptions.appendChild(input);
                     break;
-                case 'mtf':
-                    const statements = question.statements || question.options;
-                    if (statements && Array.isArray(statements)) {
-                        statements.forEach((statement, index) => {
-                            const statementDiv = document.createElement('div');
-                            statementDiv.className = 'mtf-statement flex items-center justify-between p-3 border-t border-cyan-500/20';
-                            
-                            const statementText = document.createElement('p');
-                            statementText.innerHTML = statement;
-                            statementText.className = 'flex-grow mr-4';
-                            statementDiv.appendChild(statementText);
-
-                            const buttonGroup = document.createElement('div');
-                            buttonGroup.className = 'flex gap-2 flex-shrink-0';
-                            
-                            const trueBtn = document.createElement('button');
-                            trueBtn.textContent = 'Đúng';
-                            trueBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
-                            trueBtn.dataset.value = 'true';
-                            
-                            const falseBtn = document.createElement('button');
-                            falseBtn.textContent = 'Sai';
-                            falseBtn.className = 'mtf-button p-2 rounded-md text-sm w-20';
-                            falseBtn.dataset.value = 'false';
-
-                            if (savedAnswer && savedAnswer.answer[index] === true) {
-                                trueBtn.classList.add('selected');
-                            } else if (savedAnswer && savedAnswer.answer[index] === false) {
-                                falseBtn.classList.add('selected');
-                            }
-
-                            trueBtn.onclick = () => {
-                                trueBtn.classList.add('selected');
-                                falseBtn.classList.remove('selected');
-                            };
-                            falseBtn.onclick = () => {
-                                falseBtn.classList.add('selected');
-                                trueBtn.classList.remove('selected');
-                            };
-
-                            buttonGroup.appendChild(trueBtn);
-                            buttonGroup.appendChild(falseBtn);
-                            statementDiv.appendChild(buttonGroup);
-                            answerOptions.appendChild(statementDiv);
-                        });
-                    }
-                    break;
             }
-            
-            updateNavButtons();
-            state.questionStartTime = Date.now();
         }
+
+        function applyQuestionStyles(question) {
+            questionCard.classList.remove('hard-question', 'comprehension-question');
+            questionIcons.innerHTML = '';
+
+            if (question.cognitiveLevel === 'high-order-application' || question.cognitiveLevel === 'application' || question.difficulty === 'hard') {
+                questionCard.classList.add('hard-question');
+            } else if (question.cognitiveLevel === 'comprehension') {
+                questionCard.classList.add('comprehension-question');
+            }
+
+            if (question.cognitiveLevel === 'high-order-application') {
+                const starIcon = document.createElement('span');
+                starIcon.innerHTML = '⭐';
+                starIcon.title = 'Câu hỏi vận dụng cao';
+                starIcon.className = 'text-2xl';
+                questionIcons.appendChild(starIcon);
+            }
+            if (question.requiresCalculation) {
+                const calcIcon = document.createElement('span');
+                calcIcon.innerHTML = '🖩';
+                calcIcon.title = 'Câu hỏi này cần tính toán';
+                calcIcon.className = 'text-2xl';
+                questionIcons.appendChild(calcIcon);
+            }
+        }
+
 
         function updateNavButtons() {
             previousButton.disabled = state.currentQuestionIndex === 0;
@@ -626,6 +639,19 @@
             let studentAnswer;
 
             switch (question.type) {
+                case 'group':
+                    const answers = [];
+                    const statementDivs = answerOptions.querySelectorAll('.mtf-statement');
+                    statementDivs.forEach(div => {
+                        const selectedBtn = div.querySelector('.selected');
+                        if (selectedBtn) {
+                            answers.push(selectedBtn.dataset.value === 'true');
+                        } else {
+                            answers.push(null); // No answer for this statement
+                        }
+                    });
+                    studentAnswer = answers;
+                    break;
                 case 'mc':
                 case 'tf':
                     const selectedOption = answerOptions.querySelector('.selected');
@@ -641,19 +667,6 @@
                        studentAnswer = input.value.trim();
                     }
                     break;
-                case 'mtf':
-                    const answers = [];
-                    const statementDivs = answerOptions.querySelectorAll('.mtf-statement');
-                    statementDivs.forEach(div => {
-                        const selectedBtn = div.querySelector('.selected');
-                        if (selectedBtn) {
-                            answers.push(selectedBtn.dataset.value === 'true');
-                        } else {
-                            answers.push(null); // No answer for this statement
-                        }
-                    });
-                    studentAnswer = answers;
-                    break;
             }
             
             if (studentAnswer !== undefined) {
@@ -661,14 +674,12 @@
                 const existingAnswer = state.answers[state.currentQuestionIndex];
                 
                 if (existingAnswer === null) {
-                    // First time answering, create the answer object.
                     state.answers[state.currentQuestionIndex] = {
                         id: question.id,
                         answer: studentAnswer,
                         timeTaken: timeTakenThisSession
                     };
                 } else {
-                    // Already answered, update the answer and add to the time.
                     existingAnswer.answer = studentAnswer;
                     existingAnswer.timeTaken += timeTakenThisSession;
                 }
@@ -760,11 +771,11 @@
             }
 
             detailedResultsEl.innerHTML = '<h3 class="text-2xl font-bold text-cyan-300 mb-4 text-center">Xem lại bài làm</h3>';
+            
             state.questions.forEach((q, index) => {
                 const resultDiv = document.createElement('div');
                 const studentAnswerData = state.answers[index];
                 const correctAnswerData = state.correctAnswers.find(ca => ca.id === q.id);
-                
                 let studentAnswerText = '<i>Chưa trả lời</i>';
                 let isCorrect = false;
 
@@ -772,45 +783,40 @@
                     const studentAns = studentAnswerData.answer;
                     const correctAns = correctAnswerData.correctAnswer;
                     
-                    if (q.type === 'mc') {
-                        studentAnswerText = q.options[studentAns] || 'Lựa chọn không hợp lệ';
-                    } else if (q.type === 'tf') {
-                        studentAnswerText = studentAns ? 'Đúng' : 'Sai';
-                    } else if (q.type === 'mtf') {
-                        const statements = q.statements || q.options;
+                    if (q.type === 'group') {
+                        isCorrect = JSON.stringify(studentAns) === JSON.stringify(correctAns);
                         studentAnswerText = '<ul class="list-disc list-inside text-left">';
-                        statements.forEach((stmt, i) => {
+                        q.subQuestions.forEach((subQ, i) => {
                            const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
-                           studentAnswerText += \`<li>\${stmt} -> <strong>\${studentChoice}</strong></li>\`;
+                           studentAnswerText += \`<li>\${subQ.question} -> <strong>\${studentChoice}</strong></li>\`;
                         });
                         studentAnswerText += '</ul>';
+                    } else if (q.type === 'mc') {
+                        studentAnswerText = q.options[studentAns] || 'Lựa chọn không hợp lệ';
+                        if (String(studentAns) === String(correctAns)) isCorrect = true;
+                    } else if (q.type === 'tf') {
+                        studentAnswerText = studentAns ? 'Đúng' : 'Sai';
+                        if (studentAns === correctAns) isCorrect = true;
                     } else {
                         studentAnswerText = studentAns;
-                    }
-
-                    // For MTF, the backend determines overall correctness.
-                    if (q.type === 'mtf') {
-                        isCorrect = JSON.stringify(studentAns) === JSON.stringify(correctAns);
-                    } else if (String(studentAns).trim().toLowerCase() == String(correctAns).trim().toLowerCase()) {
-                        isCorrect = true;
+                        if (String(studentAns).trim().toLowerCase() == String(correctAns).trim().toLowerCase()) isCorrect = true;
                     }
                 }
                 
                 let correctAnswerText = '';
                 if(correctAnswerData) {
                     const correctAns = correctAnswerData.correctAnswer;
-                    if (q.type === 'mc') {
+                    if (q.type === 'group') {
+                        correctAnswerText = '<ul class="list-disc list-inside text-left">';
+                        q.subQuestions.forEach((subQ, i) => {
+                           const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
+                           correctAnswerText += \`<li>\${subQ.question} -> <strong>\${correctChoice}</strong></li>\`;
+                        });
+                        correctAnswerText += '</ul>';
+                    } else if (q.type === 'mc') {
                         correctAnswerText = q.options[correctAns];
                     } else if (q.type === 'tf') {
                         correctAnswerText = correctAns ? 'Đúng' : 'Sai';
-                    } else if (q.type === 'mtf') {
-                        const statements = q.statements || q.options;
-                        correctAnswerText = '<ul class="list-disc list-inside text-left">';
-                        statements.forEach((stmt, i) => {
-                           const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
-                           correctAnswerText += \`<li>\${stmt} -> <strong>\${correctChoice}</strong></li>\`;
-                        });
-                        correctAnswerText += '</ul>';
                     } else {
                         correctAnswerText = correctAns;
                     }
@@ -818,26 +824,12 @@
 
                 let cardClasses = 'p-4 rounded-lg mb-3';
                 cardClasses += isCorrect ? ' correct' : ' incorrect';
-                if (q.cognitiveLevel === 'high-order-application' || q.cognitiveLevel === 'application' || q.difficulty === 'hard') {
-                    cardClasses += ' hard-question';
-                } else if (q.cognitiveLevel === 'comprehension') {
-                    cardClasses += ' comprehension-question';
-                }
                 resultDiv.className = cardClasses;
 
-                let iconsHTML = '';
-                if (q.cognitiveLevel === 'high-order-application') {
-                    iconsHTML += '<span title="Câu hỏi vận dụng cao" class="ml-2">⭐</span>';
-                }
-                if (q.requiresCalculation) {
-                    iconsHTML += '<span title="Câu hỏi tính toán" class="ml-2">🖩</span>';
-                }
+                const questionTitle = q.type === 'group' ? q.groupPrompt : q.question;
 
                 resultDiv.innerHTML = \`
-                    <div class="font-bold mb-2 flex justify-between items-start">
-                        <span class="flex-grow">Câu \${index + 1} (ID: \${q.id}): \${q.question}</span>
-                        <span class="flex-shrink-0 flex items-center gap-2">\${iconsHTML}</span>
-                    </div>
+                    <p class="font-bold mb-2">Câu \${index + 1} (ID: \${q.id}): \${questionTitle}</p>
                     <div class="text-sm">Câu trả lời của bạn: <div class="text-white">\${studentAnswerText}</div></div>
                     \${!isCorrect ? \`<div class="text-sm mt-2">Đáp án đúng: <div class="text-green-400">\${correctAnswerText}</div></div>\` : ''}
                 \`;
@@ -878,8 +870,8 @@
         async function sendAIChat() {
             const question = aiChatInput.value.trim();
             if (!question) return;
-
-            const currentQuestion = state.questions[state.currentQuestionIndex] || state.questions[state.questions.length - 1];
+            
+            const currentQuestion = state.questions[state.currentQuestionIndex];
             const subject = currentQuestion ? currentQuestion.subject : 'physics';
 
             addMessageToChat('user', question);
