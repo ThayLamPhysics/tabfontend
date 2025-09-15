@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình tạo mã Web App Kiểm tra ver 2</title>
+    <title>Trình tạo mã Web App Kiểm tra ver 3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
         <div class="glass-card p-8 rounded-2xl text-center">
-            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 2</h1>
+            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 3</h1>
             <p class="text-sky-100 mb-6">Nhập các thông tin dưới đây để tạo mã HTML hoàn chỉnh.</p>
             
             <div class="space-y-4 mb-6">
@@ -91,6 +91,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Thư viện KaTeX để hiển thị công thức toán -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
     <style>
         body {
             font-family: 'Nunito', sans-serif;
@@ -186,6 +190,8 @@
             pointer-events: none;
             z-index: 100;
         }
+        /* KaTeX styling */
+        .katex { font-size: 1.1em; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -410,13 +416,13 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(\`Lỗi mạng hoặc URL không hợp lệ: \${response.statusText}\`);
+                        throw new Error('Lỗi mạng hoặc URL không hợp lệ: ' + response.statusText);
                     }
                     return response.json();
                 });
             } catch (error) {
                 console.error('Lỗi API:', error);
-                alert(\`Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại URL Web App và đảm bảo đã triển khai script chính xác.\\nChi tiết: \${error.message}\`);
+                alert('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại URL Web App và đảm bảo đã triển khai script chính xác.\\nChi tiết: ' + error.message);
                 return Promise.reject({ error: error.message });
             }
         }
@@ -474,8 +480,8 @@
         function renderQuestion() {
             const question = state.questions[state.currentQuestionIndex];
             
-            questionCounter.textContent = \`Câu \${state.currentQuestionIndex + 1} / \${state.questions.length}\`;
-            progressBar.style.width = \`\${((state.currentQuestionIndex + 1) / state.questions.length) * 100}%\`;
+            questionCounter.textContent = 'Câu ' + (state.currentQuestionIndex + 1) + ' / ' + state.questions.length;
+            progressBar.style.width = (((state.currentQuestionIndex + 1) / state.questions.length) * 100) + '%';
             
             const subjectKey = question.subject;
             const subjectName = state.subjectNames[subjectKey] || subjectKey.charAt(0).toUpperCase() + subjectKey.slice(1);
@@ -552,6 +558,14 @@
             
             updateNavButtons();
             state.questionStartTime = Date.now();
+            if (window.renderMathInElement) {
+                renderMathInElement(questionCard, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
         }
 
         function renderSingleAnswerOptions(question) {
@@ -716,7 +730,7 @@
                 const unansweredCount = state.answers.filter(a => a === null).length;
                 let confirmationMessage = "Bạn có chắc chắn muốn nộp bài không?";
                 if (unansweredCount > 0) {
-                    confirmationMessage += \`<br><br><span class='text-yellow-400 font-semibold'>Cảnh báo: Bạn còn \${unansweredCount} câu chưa trả lời.</span>\`;
+                    confirmationMessage += '<br><br><span class="text-yellow-400 font-semibold">Cảnh báo: Bạn còn ' + unansweredCount + ' câu chưa trả lời.</span>';
                 }
 
                 confirmModalText.innerHTML = confirmationMessage;
@@ -750,7 +764,7 @@
                 const results = await apiCall('submitQuiz', payload);
                 
                 if (results.error) {
-                    alert(\`Có lỗi xảy ra khi nộp bài: \${results.error}\`);
+                    alert('Có lỗi xảy ra khi nộp bài: ' + results.error);
                     submitQuizButton.disabled = false;
                     submitQuizButton.textContent = 'Nộp Bài';
                     confirmModalOk.disabled = false;
@@ -793,7 +807,7 @@
                 const subjectName = state.subjectNames[subjectKey] || subjectKey;
                 const div = document.createElement('div');
                 div.className = 'glass-card p-3 rounded-lg';
-                div.innerHTML = \`<span class="font-bold text-cyan-300">\${subjectName}:</span> <span class="text-white">\${scoreData.correct}/\${scoreData.total}</span>\`;
+                div.innerHTML = '<span class="font-bold text-cyan-300">' + subjectName + ':</span> <span class="text-white">' + scoreData.correct + '/' + scoreData.total + '</span>';
                 scoreBySubjectEl.appendChild(div);
             }
 
@@ -815,7 +829,7 @@
                         studentAnswerText = '<ul class="list-disc list-inside text-left">';
                         q.subQuestions.forEach((subQ, i) => {
                            const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
-                           studentAnswerText += \`<li>\${subQ.question} -> <strong>\${studentChoice}</strong></li>\`;
+                           studentAnswerText += '<li>' + subQ.question + ' -> <strong>' + studentChoice + '</strong></li>';
                         });
                         studentAnswerText += '</ul>';
                     } else if (q.type === 'mc') {
@@ -837,7 +851,7 @@
                         correctAnswerText = '<ul class="list-disc list-inside text-left">';
                         q.subQuestions.forEach((subQ, i) => {
                            const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
-                           correctAnswerText += \`<li>\${subQ.question} -> <strong>\${correctChoice}</strong></li>\`;
+                           correctAnswerText += '<li>' + subQ.question + ' -> <strong>' + correctChoice + '</strong></li>';
                         });
                         correctAnswerText += '</ul>';
                     } else if (q.type === 'mc') {
@@ -855,13 +869,23 @@
 
                 const questionTitle = q.type === 'group' ? q.groupPrompt : q.question;
 
-                resultDiv.innerHTML = \`
-                    <p class="font-bold mb-2">Câu \${index + 1} (ID: \${q.id}): \${questionTitle}</p>
-                    <div class="text-sm">Câu trả lời của bạn: <div class="text-white">\${studentAnswerText}</div></div>
-                    \${!isCorrect ? \`<div class="text-sm mt-2">Đáp án đúng: <div class="text-green-400">\${correctAnswerText}</div></div>\` : ''}
-                \`;
+                let innerHTML = '<p class="font-bold mb-2">Câu ' + (index + 1) + ' (ID: ' + q.id + '): ' + questionTitle + '</p>';
+                innerHTML += '<div class="text-sm">Câu trả lời của bạn: <div class="text-white">' + studentAnswerText + '</div></div>';
+                if (!isCorrect) {
+                    innerHTML += '<div class="text-sm mt-2">Đáp án đúng: <div class="text-green-400">' + correctAnswerText + '</div></div>';
+                }
+                resultDiv.innerHTML = innerHTML;
+
                 detailedResultsEl.appendChild(resultDiv);
             });
+             if (window.renderMathInElement) {
+                renderMathInElement(detailedResultsEl, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
         }
 
         function selectAnswer(selectedButton, isMultipleChoice) {
@@ -921,13 +945,21 @@
 
         function addMessageToChat(sender, text) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = \`mb-3 \${sender === 'user' ? 'text-right' : 'text-left'}\`;
+            messageDiv.className = 'mb-3 ' + (sender === 'user' ? 'text-right' : 'text-left');
             const bubble = document.createElement('div');
-            bubble.className = \`inline-block p-3 rounded-2xl max-w-[80%] \${sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-slate-700 text-cyan-100 rounded-bl-none'}\`;
+            bubble.className = 'inline-block p-3 rounded-2xl max-w-[80%] ' + (sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-slate-700 text-cyan-100 rounded-bl-none');
             bubble.textContent = text;
             messageDiv.appendChild(bubble);
             aiChatMessages.appendChild(messageDiv);
             aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+             if (window.renderMathInElement) {
+                renderMathInElement(bubble, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
         }
 
     <\/script>
