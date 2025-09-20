@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình tạo mã Web App Kiểm tra ver 3</title>
+    <title>Trình tạo mã Web App Kiểm tra ver 4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
         <div class="glass-card p-8 rounded-2xl text-center">
-            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 3</h1>
+            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 4</h1>
             <p class="text-sky-100 mb-6">Nhập các thông tin dưới đây để tạo mã HTML hoàn chỉnh.</p>
             
             <div class="space-y-4 mb-6">
@@ -212,8 +212,8 @@
                 <p>Khi bạn nhập tên, hệ thống sẽ tìm kiếm điểm số các bài làm trước của bạn trong Google Sheet. Dựa trên kết quả đó, số lượng câu hỏi sẽ được điều chỉnh:</p>
                 <ul class="list-disc list-inside mt-2">
                     <li>Nếu kết quả tốt, bạn sẽ làm số câu hỏi cơ bản.</li>
-                    <li>Nếu kết quả chưa cao, hệ thống sẽ tự động thêm các câu hỏi củng cố để giúp bạn ôn tập kỹ hơn.</li>
-                    <li>Nếu không tìm thấy tên bạn, hệ thống sẽ đưa ra một số câu hỏi mặc định.</li>
+                    <li>Nếu kết quả chưa cao, hệ thống θα tự động thêm các câu hỏi củng cố để giúp bạn ôn tập kỹ hơn.</li>
+                    <li>Nếu không tìm thấy tên bạn, hệ thống θα đưa ra một số câu hỏi mặc định.</li>
                 </ul>
             </div>
         </div>
@@ -494,7 +494,15 @@
             switch (question.type) {
                 case 'group':
                     questionText.innerHTML = question.groupPrompt || 'Trả lời các mệnh đề sau:';
-                    questionImageContainer.innerHTML = ''; // Groups don't have a single image
+                    questionImageContainer.innerHTML = ''; 
+                    // Thêm logic để hiển thị hình ảnh cho câu hỏi nhóm
+                    if (question.imageUrl) {
+                        const img = document.createElement('img');
+                        img.src = question.imageUrl;
+                        img.alt = 'Hình ảnh minh họa cho nhóm câu hỏi';
+                        img.className = 'max-h-72 w-auto mx-auto my-4 rounded-lg shadow-lg';
+                        questionImageContainer.appendChild(img);
+                    }
                     
                     const savedGroupAnswer = state.answers[state.currentQuestionIndex]?.answer || [];
 
