@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình tạo mã Web App Kiểm tra ver 5</title>
+    <title>Trình tạo mã Web App Kiểm tra ver 6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
         <div class="glass-card p-8 rounded-2xl text-center">
-            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 5</h1>
+            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 6</h1>
             <p class="text-sky-100 mb-6">Nhập các thông tin dưới đây để tạo mã HTML hoàn chỉnh.</p>
             
             <div class="space-y-4 mb-6">
@@ -822,67 +822,74 @@
             detailedResultsEl.innerHTML = '<h3 class="text-2xl font-bold text-cyan-300 mb-4 text-center">Xem lại bài làm</h3>';
             
             // Sửa lỗi: Sử dụng mảng detailedResults từ backend làm nguồn dữ liệu chính
-            state.questions.forEach((q, index) => {
-                const resultDiv = document.createElement('div');
-                const studentAnswerData = state.answers[index];
-                const detail = results.detailedResults[index]; // Giả định thứ tự tương ứng
+            // Thêm kiểm tra để đảm bảo detailedResults tồn tại và hợp lệ
+            if (results.detailedResults && Array.isArray(results.detailedResults) && results.detailedResults.length === state.questions.length) {
+                state.questions.forEach((q, index) => {
+                    const resultDiv = document.createElement('div');
+                    const studentAnswerData = state.answers[index];
+                    const detail = results.detailedResults[index]; // Giả định thứ tự tương ứng
 
-                // Nguồn đáng tin cậy duy nhất cho việc đúng/sai, trực tiếp từ backend.
-                const isCorrect = detail.isCorrect;
+                    // Nguồn đáng tin cậy duy nhất cho việc đúng/sai, trực tiếp từ backend.
+                    const isCorrect = detail.isCorrect;
 
-                let studentAnswerText = '<i>Chưa trả lời</i>';
-                 if (studentAnswerData && studentAnswerData.answer !== null) {
-                    const studentAns = studentAnswerData.answer;
-                    if (q.type === 'group') {
-                        studentAnswerText = '<ul class="list-disc list-inside text-left">';
-                        q.subQuestions.forEach((subQ, i) => {
-                           const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
-                           studentAnswerText += '<li>' + subQ.question + ' -> <strong>' + studentChoice + '</strong></li>';
-                        });
-                        studentAnswerText += '</ul>';
-                    } else if (q.type === 'mc') {
-                        studentAnswerText = q.options[studentAns] || 'Lựa chọn không hợp lệ';
-                    } else if (q.type === 'tf') {
-                        studentAnswerText = studentAns ? 'Đúng' : 'Sai';
-                    } else {
-                        studentAnswerText = studentAns;
+                    let studentAnswerText = '<i>Chưa trả lời</i>';
+                     if (studentAnswerData && studentAnswerData.answer !== null) {
+                        const studentAns = studentAnswerData.answer;
+                        if (q.type === 'group') {
+                            studentAnswerText = '<ul class="list-disc list-inside text-left">';
+                            q.subQuestions.forEach((subQ, i) => {
+                               const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
+                               studentAnswerText += '<li>' + subQ.question + ' -> <strong>' + studentChoice + '</strong></li>';
+                            });
+                            studentAnswerText += '</ul>';
+                        } else if (q.type === 'mc') {
+                            studentAnswerText = q.options[studentAns] || 'Lựa chọn không hợp lệ';
+                        } else if (q.type === 'tf') {
+                            studentAnswerText = studentAns ? 'Đúng' : 'Sai';
+                        } else {
+                            studentAnswerText = studentAns;
+                        }
                     }
-                }
-                
-                let correctAnswerText = '';
-                if(detail) { // Sử dụng detail từ backend để lấy đáp án đúng
-                    const correctAns = detail.correctAnswer;
-                    if (q.type === 'group') {
-                        correctAnswerText = '<ul class="list-disc list-inside text-left">';
-                        q.subQuestions.forEach((subQ, i) => {
-                           const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
-                           correctAnswerText += '<li>' + subQ.question + ' -> <strong>' + correctChoice + '</strong></li>';
-                        });
-                        correctAnswerText += '</ul>';
-                    } else if (q.type === 'mc') {
-                        correctAnswerText = q.options[correctAns];
-                    } else if (q.type === 'tf') {
-                        correctAnswerText = correctAns ? 'Đúng' : 'Sai';
-                    } else {
-                        correctAnswerText = correctAns;
+                    
+                    let correctAnswerText = '';
+                    if(detail) { // Sử dụng detail từ backend để lấy đáp án đúng
+                        const correctAns = detail.correctAnswer;
+                        if (q.type === 'group') {
+                            correctAnswerText = '<ul class="list-disc list-inside text-left">';
+                            q.subQuestions.forEach((subQ, i) => {
+                               const correctChoice = correctAns[i] ? 'Đúng' : 'Sai';
+                               correctAnswerText += '<li>' + subQ.question + ' -> <strong>' + correctChoice + '</strong></li>';
+                            });
+                            correctAnswerText += '</ul>';
+                        } else if (q.type === 'mc') {
+                            correctAnswerText = q.options[correctAns];
+                        } else if (q.type === 'tf') {
+                            correctAnswerText = correctAns ? 'Đúng' : 'Sai';
+                        } else {
+                            correctAnswerText = correctAns;
+                        }
                     }
-                }
 
-                let cardClasses = 'p-4 rounded-lg mb-3';
-                cardClasses += isCorrect ? ' correct' : ' incorrect';
-                resultDiv.className = cardClasses;
+                    let cardClasses = 'p-4 rounded-lg mb-3';
+                    cardClasses += isCorrect ? ' correct' : ' incorrect';
+                    resultDiv.className = cardClasses;
 
-                const questionTitle = q.type === 'group' ? q.groupPrompt : q.question;
+                    const questionTitle = q.type === 'group' ? q.groupPrompt : q.question;
 
-                let innerHTML = '<p class="font-bold mb-2">Câu ' + (index + 1) + ' (ID: ' + q.id + '): ' + questionTitle + '</p>';
-                innerHTML += '<div class="text-sm">Câu trả lời của bạn: <div class="text-white">' + studentAnswerText + '</div></div>';
-                if (!isCorrect) {
-                    innerHTML += '<div class="text-sm mt-2">Đáp án đúng: <div class="text-green-400">' + correctAnswerText + '</div></div>';
-                }
-                resultDiv.innerHTML = innerHTML;
+                    let innerHTML = '<p class="font-bold mb-2">Câu ' + (index + 1) + ' (ID: ' + q.id + '): ' + questionTitle + '</p>';
+                    innerHTML += '<div class="text-sm">Câu trả lời của bạn: <div class="text-white">' + studentAnswerText + '</div></div>';
+                    if (!isCorrect) {
+                        innerHTML += '<div class="text-sm mt-2">Đáp án đúng: <div class="text-green-400">' + correctAnswerText + '</div></div>';
+                    }
+                    resultDiv.innerHTML = innerHTML;
 
-                detailedResultsEl.appendChild(resultDiv);
-            });
+                    detailedResultsEl.appendChild(resultDiv);
+                });
+            } else {
+                 detailedResultsEl.innerHTML += '<p class="text-center text-red-400">Lỗi: Không thể tải chi tiết bài làm. Dữ liệu nhận về từ máy chủ không hợp lệ.</p>';
+                 console.error("Lỗi dữ liệu detailedResults:", results.detailedResults);
+            }
+
 
              if (window.renderMathInElement) {
                 renderMathInElement(detailedResultsEl, {
