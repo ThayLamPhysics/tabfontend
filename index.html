@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình tạo mã Web App Kiểm tra ver 4</title>
+    <title>Trình tạo mã Web App Kiểm tra ver 5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,8 +212,8 @@
                 <p>Khi bạn nhập tên, hệ thống sẽ tìm kiếm điểm số các bài làm trước của bạn trong Google Sheet. Dựa trên kết quả đó, số lượng câu hỏi sẽ được điều chỉnh:</p>
                 <ul class="list-disc list-inside mt-2">
                     <li>Nếu kết quả tốt, bạn sẽ làm số câu hỏi cơ bản.</li>
-                    <li>Nếu kết quả chưa cao, hệ thống θα tự động thêm các câu hỏi củng cố để giúp bạn ôn tập kỹ hơn.</li>
-                    <li>Nếu không tìm thấy tên bạn, hệ thống θα đưa ra một số câu hỏi mặc định.</li>
+                    <li>Nếu kết quả chưa cao, hệ thống sẽ tự động thêm các câu hỏi củng cố để giúp bạn ôn tập kỹ hơn.</li>
+                    <li>Nếu không tìm thấy tên bạn, hệ thống sẽ đưa ra một số câu hỏi mặc định.</li>
                 </ul>
             </div>
         </div>
@@ -821,19 +821,19 @@
 
             detailedResultsEl.innerHTML = '<h3 class="text-2xl font-bold text-cyan-300 mb-4 text-center">Xem lại bài làm</h3>';
             
+            // Sửa lỗi: Sử dụng mảng detailedResults từ backend làm nguồn dữ liệu chính
             state.questions.forEach((q, index) => {
                 const resultDiv = document.createElement('div');
                 const studentAnswerData = state.answers[index];
-                const correctAnswerData = state.correctAnswers.find(ca => ca.id === q.id);
-                let studentAnswerText = '<i>Chưa trả lời</i>';
-                let isCorrect = false;
+                const detail = results.detailedResults[index]; // Giả định thứ tự tương ứng
 
-                if (studentAnswerData && correctAnswerData) {
+                // Nguồn đáng tin cậy duy nhất cho việc đúng/sai, trực tiếp từ backend.
+                const isCorrect = detail.isCorrect;
+
+                let studentAnswerText = '<i>Chưa trả lời</i>';
+                 if (studentAnswerData && studentAnswerData.answer !== null) {
                     const studentAns = studentAnswerData.answer;
-                    const correctAns = correctAnswerData.correctAnswer;
-                    
                     if (q.type === 'group') {
-                        isCorrect = JSON.stringify(studentAns) === JSON.stringify(correctAns);
                         studentAnswerText = '<ul class="list-disc list-inside text-left">';
                         q.subQuestions.forEach((subQ, i) => {
                            const studentChoice = studentAns[i] === true ? 'Đúng' : (studentAns[i] === false ? 'Sai' : 'Chưa chọn');
@@ -842,19 +842,16 @@
                         studentAnswerText += '</ul>';
                     } else if (q.type === 'mc') {
                         studentAnswerText = q.options[studentAns] || 'Lựa chọn không hợp lệ';
-                        if (String(studentAns) === String(correctAns)) isCorrect = true;
                     } else if (q.type === 'tf') {
                         studentAnswerText = studentAns ? 'Đúng' : 'Sai';
-                        if (studentAns === correctAns) isCorrect = true;
                     } else {
                         studentAnswerText = studentAns;
-                        if (String(studentAns).trim().toLowerCase() == String(correctAns).trim().toLowerCase()) isCorrect = true;
                     }
                 }
                 
                 let correctAnswerText = '';
-                if(correctAnswerData) {
-                    const correctAns = correctAnswerData.correctAnswer;
+                if(detail) { // Sử dụng detail từ backend để lấy đáp án đúng
+                    const correctAns = detail.correctAnswer;
                     if (q.type === 'group') {
                         correctAnswerText = '<ul class="list-disc list-inside text-left">';
                         q.subQuestions.forEach((subQ, i) => {
@@ -886,6 +883,7 @@
 
                 detailedResultsEl.appendChild(resultDiv);
             });
+
              if (window.renderMathInElement) {
                 renderMathInElement(detailedResultsEl, {
                     delimiters: [
