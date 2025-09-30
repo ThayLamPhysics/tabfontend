@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình tạo mã Web App Kiểm tra ver 6</title>
+    <title>Trình tạo mã Web App Kiểm tra ver 8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
         <div class="glass-card p-8 rounded-2xl text-center">
-            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 6</h1>
+            <h1 class="text-4xl font-bold text-sky-300 mb-2">Trình tạo mã Web App Kiểm tra ver 8</h1>
             <p class="text-sky-100 mb-6">Nhập các thông tin dưới đây để tạo mã HTML hoàn chỉnh.</p>
             
             <div class="space-y-4 mb-6">
@@ -192,6 +192,26 @@
         }
         /* KaTeX styling */
         .katex { font-size: 1.1em; }
+        
+        /* NEW: Styles for info badges */
+        .info-badge-item {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 8px;
+            text-transform: capitalize;
+            color: #020a18;
+        }
+        .difficulty-easy { background: linear-gradient(45deg, #4ade80, #22c55e); }
+        .difficulty-medium { background: linear-gradient(45deg, #facc15, #f59e0b); }
+        .difficulty-hard { background: linear-gradient(45deg, #f87171, #ef4444); }
+        .cognitive-recognition { background: linear-gradient(45deg, #60a5fa, #3b82f6); }
+        .cognitive-comprehension { background: linear-gradient(45deg, #c084fc, #a855f7); }
+        .cognitive-application { background: linear-gradient(45deg, #f472b6, #ec4899); }
+        .cognitive-high-order { background: linear-gradient(45deg, #e879f9, #d946ef); }
+
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -228,6 +248,8 @@
                 <div id="progress-bar" class="progress-bar-inner h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             <div id="question-card" class="glass-card p-8 rounded-2xl">
+                <!-- NEW: Container for info badges -->
+                <div id="question-info-badge" class="mb-3 text-left"></div>
                 <div class="flex items-start justify-between">
                     <p id="question-text" class="text-2xl font-semibold mb-2 flex-grow"></p>
                     <div id="question-icons" class="ml-4 flex-shrink-0 flex items-center gap-2"></div>
@@ -465,7 +487,6 @@
 
                 state.questions = data.questions;
                 state.currentQuestionIndex = 0;
-                // Khởi tạo mảng state.answers ngay sau khi load câu hỏi
                 state.answers = new Array(state.questions.length).fill(null);
                 startScreen.classList.add('hidden');
                 quizScreen.classList.remove('hidden');
@@ -495,7 +516,6 @@
                 case 'group':
                     questionText.innerHTML = question.groupPrompt || 'Trả lời các mệnh đề sau:';
                     questionImageContainer.innerHTML = ''; 
-                    // Thêm logic để hiển thị hình ảnh cho câu hỏi nhóm
                     if (question.imageUrl) {
                         const img = document.createElement('img');
                         img.src = question.imageUrl;
@@ -631,6 +651,39 @@
             questionCard.classList.remove('hard-question', 'comprehension-question');
             questionIcons.innerHTML = '';
 
+            // NEW: Logic to display info badges
+            const infoBadgeContainer = document.getElementById('question-info-badge');
+            infoBadgeContainer.innerHTML = ''; 
+
+            const cognitiveLevelMap = {
+                'recognition': 'Nhận biết',
+                'comprehension': 'Thông hiểu',
+                'application': 'Vận dụng',
+                'high-order-application': 'Vận dụng cao'
+            };
+
+            const difficultyMap = {
+                'easy': 'Dễ',
+                'medium': 'Trung bình',
+                'hard': 'Khó'
+            };
+
+            if (question.cognitiveLevel && cognitiveLevelMap[question.cognitiveLevel]) {
+                const cognitiveBadge = document.createElement('span');
+                const cognitiveClass = question.cognitiveLevel.replace('high-order-application', 'high-order');
+                cognitiveBadge.className = \`info-badge-item cognitive-\${cognitiveClass}\`;
+                cognitiveBadge.textContent = cognitiveLevelMap[question.cognitiveLevel];
+                infoBadgeContainer.appendChild(cognitiveBadge);
+            }
+
+            if (question.difficulty && difficultyMap[question.difficulty]) {
+                const difficultyBadge = document.createElement('span');
+                difficultyBadge.className = \`info-badge-item difficulty-\${question.difficulty}\`;
+                difficultyBadge.textContent = difficultyMap[question.difficulty];
+                infoBadgeContainer.appendChild(difficultyBadge);
+            }
+            // End of new logic
+
             if (question.cognitiveLevel === 'high-order-application' || question.cognitiveLevel === 'application' || question.difficulty === 'hard') {
                 questionCard.classList.add('hard-question');
             } else if (question.cognitiveLevel === 'comprehension') {
@@ -698,7 +751,7 @@
                 const timeTakenThisSession = Math.round((Date.now() - state.questionStartTime) / 1000);
                 const existingAnswer = state.answers[state.currentQuestionIndex];
                 
-                if (existingAnswer == null) { // Bắt cả null và undefined
+                if (existingAnswer == null) {
                     state.answers[state.currentQuestionIndex] = {
                         id: question.id,
                         answer: studentAnswer,
@@ -729,11 +782,8 @@
 
         function confirmAndSubmitQuiz() {
             submitQuizButton.disabled = true;
-
-            // Lưu lại câu hiện tại
             saveCurrentAnswer();
 
-            // Đợi 1 frame để chắc chắn state đã ổn định trước khi hiển thị modal
             requestAnimationFrame(() => {
                 const unansweredCount = state.answers.filter(a => a === null).length;
                 let confirmationMessage = "Bạn có chắc chắn muốn nộp bài không?";
@@ -751,12 +801,11 @@
             confirmModalOk.disabled = true;
             showLoading('Đang chấm bài và phân tích kết quả...');
 
-            // ✨ FIX: Thay thế giá trị null bằng một đối tượng giữ chỗ an toàn
             const processedAnswers = state.answers.map((ans, index) => {
                 if (ans === null) {
                     return {
                         id: state.questions[index].id,
-                        answer: 'NO_ANSWER', // Một chuỗi đặc biệt để backend nhận diện
+                        answer: 'NO_ANSWER',
                         timeTaken: 0
                     };
                 }
@@ -766,7 +815,7 @@
             try {
                 const payload = {
                     studentName: state.studentName,
-                    answers: processedAnswers, // Sử dụng mảng đã được xử lý
+                    answers: processedAnswers,
                     questionIds: state.questions.map(q => q.id)
                 };
                 const results = await apiCall('submitQuiz', payload);
@@ -793,7 +842,7 @@
         }
 
         function displayResults(results) {
-            aiInteractionSection.classList.remove('hidden'); // Show AI section on results screen
+            aiInteractionSection.classList.remove('hidden');
             correctCountEl.textContent = results.correctCount;
             totalCountEl.textContent = results.total;
             percentageEl.textContent = results.percentage;
@@ -821,15 +870,12 @@
 
             detailedResultsEl.innerHTML = '<h3 class="text-2xl font-bold text-cyan-300 mb-4 text-center">Xem lại bài làm</h3>';
             
-            // Sửa lỗi: Sử dụng mảng detailedResults từ backend làm nguồn dữ liệu chính
-            // Thêm kiểm tra để đảm bảo detailedResults tồn tại và hợp lệ
             if (results.detailedResults && Array.isArray(results.detailedResults) && results.detailedResults.length === state.questions.length) {
                 state.questions.forEach((q, index) => {
                     const resultDiv = document.createElement('div');
                     const studentAnswerData = state.answers[index];
-                    const detail = results.detailedResults[index]; // Giả định thứ tự tương ứng
+                    const detail = results.detailedResults[index];
 
-                    // Nguồn đáng tin cậy duy nhất cho việc đúng/sai, trực tiếp từ backend.
                     const isCorrect = detail.isCorrect;
 
                     let studentAnswerText = '<i>Chưa trả lời</i>';
@@ -852,7 +898,7 @@
                     }
                     
                     let correctAnswerText = '';
-                    if(detail) { // Sử dụng detail từ backend để lấy đáp án đúng
+                    if(detail) { 
                         const correctAns = detail.correctAnswer;
                         if (q.type === 'group') {
                             correctAnswerText = '<ul class="list-disc list-inside text-left">';
@@ -989,7 +1035,6 @@
                 return;
             }
 
-            // Replace the placeholders with the user's URL and title
             let finalCode = htmlTemplate.replace(/%%SCRIPT_URL_PLACEHOLDER%%/g, url);
             finalCode = finalCode.replace(/%%QUIZ_TITLE%%/g, title);
             
@@ -1002,7 +1047,6 @@
             codeOutput.setSelectionRange(0, 99999); // For mobile devices
 
             try {
-                // Use execCommand as a fallback for iFrame environments
                 document.execCommand('copy');
                 copyButton.textContent = 'Đã sao chép!';
                 setTimeout(() => {
